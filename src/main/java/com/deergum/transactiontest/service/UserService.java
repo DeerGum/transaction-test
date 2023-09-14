@@ -3,49 +3,62 @@ package com.deergum.transactiontest.service;
 import com.deergum.transactiontest.domain.User;
 import com.deergum.transactiontest.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
 
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
+    public Optional<User> findUserById(String id) {
+        return userRepository.findUserById(id);
     }
 
-    public Optional<User> findUserById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    public User saveUser(User user) {
-        return userRepository.save(user);
-    }
-
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
-    }
-
-    @Transactional
-    public void testTransactional() {
+    @Transactional(propagation = Propagation.REQUIRED)
+    public String testTransactional() {
         User user1 = new User();
+        user1.setId(UUID.randomUUID().toString());
         user1.setName("Alice");
         userRepository.save(user1);
 
-        // 의도적으로 예외를 발생시켜 트랜잭션을 테스트합니다.
-        if (true) {
-            throw new RuntimeException("Test exception");
-        }
+        RestTemplate restTemplate = new RestTemplate();
+        String result = restTemplate.getForObject("http://127.0.0.1:3000/data/check/" + user1.getId(), String.class);
 
-        User user2 = new User();
-        user2.setName("Bob");
-        userRepository.save(user2);
+        log.info("Call Result : {}", result);
+        return result;
     }
 
+    public String testTransactional2() {
+        User user1 = new User();
+        user1.setId(UUID.randomUUID().toString());
+        user1.setName("Alice");
+        saveUser(user1);
+
+        String result = callApi(user1.getId());
+
+        log.info("Call Result : {}", result);
+        return result;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void saveUser(User user) {
+        userRepository.save(user);
+    }
+
+    private String callApi(String uid) {
+        RestTemplate restTemplate = new RestTemplate();
+        String result = restTemplate.getForObject("http://127.0.0.1:3000/data/check/" + uid, String.class);
+
+        return result;
+    }
 }

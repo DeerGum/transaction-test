@@ -11,3 +11,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+logging:
+  level:
+    root: WARN
+    org.springframework.web: INFO
+    com.deergum.transactiontest: INFO

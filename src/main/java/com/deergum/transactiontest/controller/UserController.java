@@ -9,50 +9,36 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    // 모든 사용자 조회
-    @GetMapping
-    public List<User> getAllUsers() {
-        return userService.findAllUsers();
-    }
-
-    // 특정 사용자 조회
+    // id로 사용자 조회
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
+    public String getUserById(@PathVariable String id) {
         Optional<User> user = userService.findUserById(id);
-        return user.orElse(null);
-    }
-
-    // 새로운 사용자 추가
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.saveUser(user);
-    }
-
-    // 사용자 정보 수정
-    @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        user.setId(id);
-        return userService.saveUser(user);
-    }
-
-    // 사용자 삭제
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+        if (user.isEmpty())
+            return "user not found";
+        else
+            return "user id : " + user.get().getId();
     }
 
     // 트랜잭션 테스트
     @PostMapping("/transactional")
     public String transactionalTest() {
         try {
-            userService.testTransactional();
-            return "Transaction successful";
+            return userService.testTransactional();
+        } catch (Exception e) {
+            return "Transaction failed: " + e.getMessage();
+        }
+    }
+
+    @PostMapping("/transactional2")
+    public String transactionalTest2() {
+        try {
+            return  userService.testTransactional2();
         } catch (Exception e) {
             return "Transaction failed: " + e.getMessage();
         }
